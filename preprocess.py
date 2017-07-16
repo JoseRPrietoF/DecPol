@@ -5,6 +5,11 @@ import nltk, textblob
 from textblob.classifiers import NaiveBayesClassifier
 from sklearn.model_selection import train_test_split
 from collections import Counter
+from sklearn.feature_extraction.text import TfidfTransformer
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.naive_bayes import MultinomialNB
+from sklearn.utils import shuffle
+
 
 pattern = r'\w+'
 tokenizerAlpha = RegexpTokenizer(pattern)
@@ -65,8 +70,6 @@ def delete_class(X,y,class_to_delete='000'):
     print(len(y))
     new_X = []; new_y = []
     for i in range(len(y)):
-        print(i)
-        print(y[i])
         if y[i] != class_to_delete:
             new_X.append(X[i])
             new_y.append(y[i])
@@ -82,24 +85,35 @@ n_classes = len(clases)
 print("Numero de clases %d " % n_classes)
 dict_clases = create_dict(clases)
 
+X, y = shuffle(X, y)
+
 y = transform_class_to_integer(y,dict_clases)
 print(len(y))
 print("Counter %s " % Counter(y))
 
-X_train, X_test, y_train, y_test = train_test_split( X, y, test_size=0.20, random_state=42)
-print(np.array(X_train).shape)
-print(np.array(y_train).shape)
-print(np.array(X_test).shape)
-print(np.array(y_test).shape)
+#### -------------- Transforms
+#bag of words - sparse
+count_vect = CountVectorizer()
+X_train_counts = count_vect.fit_transform(X)
+print( "After Count Vectorized ")
+print(X_train_counts.shape)
+#print( count_vect.vocabulary_.get(u'aumentar'))
 
-train = []
-test = []
-for i,x in enumerate(zip(X_train,y_train)):
-    train.append(x)
+#tf-idf
+tfidf_transformer = TfidfTransformer()
+X_train_tfidf = tfidf_transformer.fit_transform(X_train_counts)
+print("After tf " )
+print( X_train_tfidf.shape)
 
-for i,x in enumerate(zip(X_train,y_train)):
-    test.append(x)
-cl = NaiveBayesClassifier(train)
-print(cl)
+#### end
+num_train = int(X_train_tfidf.shape[0]*0.8)
+print("Num ejemplos para entrenar %d " % num_train)
+X_train = X_train_tfidf[:num_train]
+y_train = y[:num_train]
+X_test = X_train_tfidf[num_train:]
+y_test = y[num_train:]
 
-print("Accuracy: {0}".format(cl.accuracy(test)))
+clf = MultinomialNB().fit(X_train_tfidf, y)
+
+predicted = clf.predict(X_test[0])
+print(clf.score(X_test,y_test))
