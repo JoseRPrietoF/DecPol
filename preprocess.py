@@ -77,43 +77,43 @@ def delete_class(X,y,class_to_delete='000'):
     print("Deleted %d elements " % count)
     return new_X,new_y
 
-X, y = read_data()
-X,y = delete_class(X,y)
-clases = list(set(y))
-print("Clases: ", clases)
-n_classes = len(clases)
-print("Numero de clases %d " % n_classes)
-dict_clases = create_dict(clases)
+def get_sparse_data(perc_train=0.8):
+    X, y = read_data()
+    X, y = delete_class(X, y)
+    clases = list(set(y))
+    print("Clases: ", clases)
+    n_classes = len(clases)
+    print("Numero de clases %d " % n_classes)
+    dict_clases = create_dict(clases)
 
-X, y = shuffle(X, y)
+    X, y = shuffle(X, y)
 
-y = transform_class_to_integer(y,dict_clases)
-print(len(y))
-print("Counter %s " % Counter(y))
+    y = transform_class_to_integer(y, dict_clases)
+    print(len(y))
+    print("Counter %s " % Counter(y))
 
-#### -------------- Transforms
-#bag of words - sparse
-count_vect = CountVectorizer()
-X_train_counts = count_vect.fit_transform(X)
-print( "After Count Vectorized ")
-print(X_train_counts.shape)
-#print( count_vect.vocabulary_.get(u'aumentar'))
+    #### -------------- Transforms
+    # bag of words - sparse
+    count_vect = CountVectorizer()
+    X_train_counts = count_vect.fit_transform(X)
+    print("After Count Vectorized ")
+    print(X_train_counts.shape)
+    # print( count_vect.vocabulary_.get(u'aumentar'))
 
-#tf-idf
-tfidf_transformer = TfidfTransformer()
-X_train_tfidf = tfidf_transformer.fit_transform(X_train_counts)
-print("After tf " )
-print( X_train_tfidf.shape)
+    # tf-idf
+    tfidf_transformer = TfidfTransformer()
+    X_train_tfidf = tfidf_transformer.fit_transform(X_train_counts)
+    print("After tf ")
+    print(X_train_tfidf.shape)
 
-#### end
-num_train = int(X_train_tfidf.shape[0]*0.8)
-print("Num ejemplos para entrenar %d " % num_train)
-X_train = X_train_tfidf[:num_train]
-y_train = y[:num_train]
-X_test = X_train_tfidf[num_train:]
-y_test = y[num_train:]
+    #### end
+    num_train = int(X_train_tfidf.shape[0] * 0.8)
+    print("Num ejemplos para entrenar %d " % num_train)
+    X_train = X_train_tfidf[:num_train]
+    y_train = y[:num_train]
+    X_test = X_train_tfidf[num_train:]
+    y_test = y[num_train:]
 
-clf = MultinomialNB().fit(X_train_tfidf, y)
+    return X_train, y_train, X_test, X_train
 
-predicted = clf.predict(X_test[0])
-print(clf.score(X_test,y_test))
+
