@@ -1,7 +1,7 @@
 from sklearn.naive_bayes import MultinomialNB
 import preprocess
 
-X_train, y_train, X_test, y_test = preprocess.get_sparse_data()
+X_train, y_train, X_test, y_test = preprocess.get_sparse_data(simply=True)
 
 
 clf = MultinomialNB().fit(X_train, y_train)

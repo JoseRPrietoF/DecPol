@@ -4,7 +4,7 @@ from sklearn.model_selection import GridSearchCV
 from nltk.stem import SnowballStemmer
 import preprocess
 
-X_train, y_train, X_test, y_test = preprocess.get_sparse_data()
+X_train, y_train, X_test, y_test = preprocess.get_sparse_data(simply=True)
 
 params={ 'kernel': [ 'poly', 'rbf', 'linear', 'sigmoid' ],
          'C' : [1.0, 10.0, 100.0, 1.0e-3, 1.0e-2, 1.0e-1, 1.0, 1.0e+1 ],

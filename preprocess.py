@@ -21,7 +21,7 @@ def read_data(path="data/", stem=True):
         if not file_name.endswith(".csv"):
             continue
         filepath = os.path.join(path, file_name)
-        with open(filepath, newline='') as csvfile:
+        with open(filepath, newline='',encoding="ISO-8859-1") as csvfile:
             spamreader = csv.reader(csvfile, delimiter=',', quotechar='"')
             for row in spamreader:
                 if row[1] == '': continue
@@ -96,11 +96,25 @@ def tf_idf(X):
 
     return X_train_tfidf
 
-def get_sparse_data(perc_train=0.8, tfidf = True, stem = True):
+"""Metodo que pasa de la clase
+A202 a A
+BXXXXX a B
+etc
+"""
+def simplify_classes(y):
+    for i in range(len(y)):
+        y[i] = y[i][0]
+    return y
+
+def get_sparse_data(perc_train=0.8, tfidf = True, stem = True, simply=False):
     X, y = read_data(stem=True)
     X, y = delete_class(X, y)
+    if simply:
+        y = simplify_classes(y)
+        print("Reducido numero de clases!!!!")
     clases = list(set(y))
     n_classes = len(clases)
+    print("Clases %s " % clases)
     print("Numero de clases %d " % n_classes)
     dict_clases = create_dict(clases)
 
