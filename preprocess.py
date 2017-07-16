@@ -1,22 +1,18 @@
 import os,csv
-import numpy as np
 from nltk.tokenize import RegexpTokenizer
-import nltk, textblob
-from textblob.classifiers import NaiveBayesClassifier
-from sklearn.model_selection import train_test_split
-from collections import Counter
+import nltk, re
 from sklearn.feature_extraction.text import TfidfTransformer
 from sklearn.feature_extraction.text import CountVectorizer
-from sklearn.naive_bayes import MultinomialNB
 from sklearn.utils import shuffle
-
+from nltk.stem import SnowballStemmer
+from nltk.corpus import stopwords
 
 pattern = r'\w+'
 tokenizerAlpha = RegexpTokenizer(pattern)
 
 
 """Devuelve X (muestras) e y(etiquetas)"""
-def read_data(path="data/"):
+def read_data(path="data/", stem=True):
     lst = os.listdir(path)
     lst.sort()
     X = []
@@ -29,21 +25,34 @@ def read_data(path="data/"):
             spamreader = csv.reader(csvfile, delimiter=',', quotechar='"')
             for row in spamreader:
                 if row[1] == '': continue
-                X.append(procesar(row[1]))
+                X.append(procesar(row[1], stem))
                 y.append(row[2])
     return X,y
 
 """Devuelve los terminos"""
-def procesar(cadena):
+def procesar(cadena,stem = True):
 
     #pasamos to do a minus
     cadena = cadena.lower()
     # Quitamos simbolos no alfanumeicos
     terminos = nltk.regexp_tokenize(cadena, pattern) #leer el pattern mas arriba
-    terminos = ' '.join([str(x) for x in terminos])
+
+    # This is the simple way to remove stop words
+    #Tambien elimina caracteres
+    terminos_non_stop = []
+    for word in terminos:
+        if word not in stopwords.words('spanish'):
+            terminos_non_stop.append(re.sub('\W+','', word))
+    terminos = terminos_non_stop
     #No se han eliminado repetidos.
     #los eliminamos si queremos ahora
     #terminos = list(set(terminos))
+    if stem:
+        stemmer = SnowballStemmer("spanish")
+        for i in range(len(terminos)):
+            terminos[i] = stemmer.stem(terminos[i])
+
+    terminos = ' '.join([str(x) for x in terminos])
     return terminos
 
 """creamos un diccionario que relaciona string a id"""
@@ -87,8 +96,8 @@ def tf_idf(X):
 
     return X_train_tfidf
 
-def get_sparse_data(perc_train=0.8, tfidf = True):
-    X, y = read_data()
+def get_sparse_data(perc_train=0.8, tfidf = True, stem = True):
+    X, y = read_data(stem=True)
     X, y = delete_class(X, y)
     clases = list(set(y))
     n_classes = len(clases)
