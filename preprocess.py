@@ -25,10 +25,8 @@ def read_data(path="data/"):
         if not file_name.endswith(".csv"):
             continue
         filepath = os.path.join(path, file_name)
-        print("Filepath %s " % filepath)
         with open(filepath, newline='') as csvfile:
             spamreader = csv.reader(csvfile, delimiter=',', quotechar='"')
-            print(spamreader)
             for row in spamreader:
                 if row[1] == '': continue
                 X.append(procesar(row[1]))
@@ -66,8 +64,6 @@ def transform_class_to_integer(y,clases_dict):
 
 def delete_class(X,y,class_to_delete='000'):
     count = 0
-    print(len(X))
-    print(len(y))
     new_X = []; new_y = []
     for i in range(len(y)):
         if y[i] != class_to_delete:
@@ -77,11 +73,24 @@ def delete_class(X,y,class_to_delete='000'):
     print("Deleted %d elements " % count)
     return new_X,new_y
 
-def get_sparse_data(perc_train=0.8):
+def tf_idf(X):
+    #### -------------- Transforms
+    # bag of words - sparse
+    count_vect = CountVectorizer()
+    X_train_counts = count_vect.fit_transform(X)
+
+    # print( count_vect.vocabulary_.get(u'aumentar'))
+
+    # tf-idf
+    tfidf_transformer = TfidfTransformer()
+    X_train_tfidf = tfidf_transformer.fit_transform(X_train_counts)
+
+    return X_train_tfidf
+
+def get_sparse_data(perc_train=0.8, tfidf = True):
     X, y = read_data()
     X, y = delete_class(X, y)
     clases = list(set(y))
-    print("Clases: ", clases)
     n_classes = len(clases)
     print("Numero de clases %d " % n_classes)
     dict_clases = create_dict(clases)
@@ -89,31 +98,20 @@ def get_sparse_data(perc_train=0.8):
     X, y = shuffle(X, y)
 
     y = transform_class_to_integer(y, dict_clases)
-    print(len(y))
-    print("Counter %s " % Counter(y))
 
-    #### -------------- Transforms
-    # bag of words - sparse
-    count_vect = CountVectorizer()
-    X_train_counts = count_vect.fit_transform(X)
-    print("After Count Vectorized ")
-    print(X_train_counts.shape)
-    # print( count_vect.vocabulary_.get(u'aumentar'))
 
-    # tf-idf
-    tfidf_transformer = TfidfTransformer()
-    X_train_tfidf = tfidf_transformer.fit_transform(X_train_counts)
-    print("After tf ")
-    print(X_train_tfidf.shape)
+    if (tfidf):
+        X = tf_idf(X)
+        num_train = int(X.shape[0] * perc_train)
+    else:
+        num_train = int(len(X)*perc_train)
 
-    #### end
-    num_train = int(X_train_tfidf.shape[0] * 0.8)
     print("Num ejemplos para entrenar %d " % num_train)
-    X_train = X_train_tfidf[:num_train]
+    X_train = X[:num_train]
     y_train = y[:num_train]
-    X_test = X_train_tfidf[num_train:]
+    X_test = X[num_train:]
     y_test = y[num_train:]
 
-    return X_train, y_train, X_test, X_train
+    return X_train, y_train, X_test, y_test
 
 
