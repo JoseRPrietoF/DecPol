@@ -6,31 +6,41 @@ from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.utils import shuffle
 from nltk.stem import SnowballStemmer
 from nltk.corpus import stopwords
+from operator import itemgetter
+import unicodedata
 
 pattern = r'\w+'
 tokenizerAlpha = RegexpTokenizer(pattern)
 
+vocab_freq = {}
+coding = {}
 
-"""Devuelve X (muestras) e y(etiquetas)"""
-def read_data(path="data/", stem=True):
-    lst = os.listdir(path)
-    lst.sort()
-    X = []
-    y = []
-    for file_name in lst:
-        if not file_name.endswith(".csv"):
-            continue
-        filepath = os.path.join(path, file_name)
-        with open(filepath, newline='',encoding="ISO-8859-1") as csvfile:
-            spamreader = csv.reader(csvfile, delimiter=',', quotechar='"')
-            for row in spamreader:
-                if row[1] == '': continue
-                X.append(procesar(row[1], stem))
-                y.append(row[2])
-    return X,y
+
+def elimina_tildes(s):
+   return ''.join((c for c in unicodedata.normalize('NFD', s) if unicodedata.category(c) != 'Mn'))
+
+def cargar_stopwords_catalan():
+    pal = []
+    with open("catalan.txt", "r",encoding='utf-8') as myfile:
+        pal = elimina_tildes(myfile.read())
+        pal = pal.split("\n")
+    return pal
+
+
+
+"""modifica coding creando un numero (segun su frecuencia) para cada palabra, a partir de la lista ordenada por frecuencia.
+Devuelve el tamanyo del diccionario (vocabul)"""
+def create_coding(ordered):
+    #('europe', 560), ('per', 335), ('social', 315), ....
+    index = 0
+    for x,y in ordered:
+        coding[x] = index
+        index += 1
+    print(coding)
+    return index
 
 """Devuelve los terminos"""
-def procesar(cadena,stem = True):
+def procesar(cadena,stem = True, extra_stop = []):
 
     #pasamos to do a minus
     cadena = cadena.lower()
@@ -41,8 +51,11 @@ def procesar(cadena,stem = True):
     #Tambien elimina caracteres
     terminos_non_stop = []
     for word in terminos:
-        if word not in stopwords.words('spanish'):
-            terminos_non_stop.append(re.sub('\W+','', word))
+        if word not in stopwords.words('spanish') and len(word) > 2 and word not in extra_stop:
+            word = elimina_tildes(word)
+            word = re.sub(r'[^a-zA-Z ]', '', word) #eliminamos caracteres alfanumericos
+            if word != '':
+                terminos_non_stop.append(re.sub('\W+','', word))
     terminos = terminos_non_stop
     #No se han eliminado repetidos.
     #los eliminamos si queremos ahora
@@ -52,8 +65,17 @@ def procesar(cadena,stem = True):
         for i in range(len(terminos)):
             terminos[i] = stemmer.stem(terminos[i])
 
+    add_to_dict(terminos)
+
     terminos = ' '.join([str(x) for x in terminos])
     return terminos
+
+"""Va creando el diccionario con las frecuencias
+Modifica vocab_freq"""
+def add_to_dict(terminos):
+    for t in terminos:
+        freq = vocab_freq.get(t,0)
+        vocab_freq[t] = freq + 1
 
 """creamos un diccionario que relaciona string a id"""
 def create_dict(classes):
@@ -106,8 +128,20 @@ def simplify_classes(y):
         y[i] = y[i][0]
     return y
 
-def get_sparse_data(perc_train=0.8, tfidf = True, stem = True, simply=False):
-    X, y = read_data(stem=True)
+"""Codifica cada palabra segun el coding
+X = ["hola sdf", "gehh th rthrt h" ...] """
+def codificar(X,coding={}):
+    new_X = []
+    for frase in X:
+        new_frase = []
+        frase = frase.split(" ")
+        for pal in frase:
+            new_frase.append(coding.get(pal))
+        new_X.append(new_frase)
+    return new_X
+
+def get_data(perc_train=0.8, tfidf = False, stem = True, simply=False):
+    X, y,tamanyo,coding = read_data(stem=True)
     X, y = delete_class(X, y)
     if simply:
         y = simplify_classes(y)
@@ -127,6 +161,7 @@ def get_sparse_data(perc_train=0.8, tfidf = True, stem = True, simply=False):
         X = tf_idf(X)
         num_train = int(X.shape[0] * perc_train)
     else:
+        X = codificar(X,coding)
         num_train = int(len(X)*perc_train)
 
     print("Num ejemplos para entrenar %d " % num_train)
@@ -137,4 +172,29 @@ def get_sparse_data(perc_train=0.8, tfidf = True, stem = True, simply=False):
 
     return X_train, y_train, X_test, y_test
 
+"""Devuelve X (muestras) e y(etiquetas), tamanyo_dic, codificacion"""
+def read_data(path="data/", stem=True):
+    stop_catalan = cargar_stopwords_catalan()
 
+    lst = os.listdir(path)
+    lst.sort()
+    X = []
+    y = []
+    for file_name in lst:
+        if not file_name.endswith(".csv"):
+            continue
+        filepath = os.path.join(path, file_name)
+        with open(filepath, newline='',encoding="ISO-8859-1") as csvfile:
+            spamreader = csv.reader(csvfile, delimiter=',', quotechar='"')
+            for row in spamreader:
+                if row[1] == '': continue
+                X.append(procesar(row[1], stem,extra_stop=stop_catalan))
+                y.append(row[2])
+    print(vocab_freq)
+    items = vocab_freq.items()
+    ordered = sorted(items,key=itemgetter(1),reverse=True)
+    tamanyo = create_coding(ordered)
+    print("Tamanyo del dic %d " % tamanyo)
+    return X,y,tamanyo,coding
+
+#get_data(simply=True)
