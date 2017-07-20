@@ -2,13 +2,23 @@ from sklearn.neighbors import KNeighborsClassifier
 import preprocess
 
 tf_idf = False
-X_train, y_train, X_test, y_test = preprocess.get_data(simply=True, tfidf=tf_idf)
+X_train, y_train, X_test, y_test,n_features, _ = preprocess.get_data(simply=True, tfidf=tf_idf)
 for i in range(2):
     print("***"*10)
     print(X_train[i])
 
 best_acc = 0
 best_n = 0
+print("****" * 100)
+if tf_idf:
+    print("Shape")
+    print(X_train[0].shape)
+    print("****" *100)
+else:
+    for i in range(5):
+        print("*"*10)
+        #print(X_train[i])
+        #print(len(X_train[i]))
 for i in range(4,100):
 
     classifier = KNeighborsClassifier( n_neighbors=i, weights='uniform' )

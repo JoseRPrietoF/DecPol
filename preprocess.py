@@ -86,18 +86,24 @@ def create_dict(classes):
 
 """Pasamos las clases de string a id integer,
 Se le pasa las clases y el diccionario de clases"""
-def transform_class_to_integer(y,clases_dict):
+def transform_class_to_integer(y):
     res = []
+    clases = list(set(y))
+    n_classes = len(clases)
+    print("Clases %s " % clases)
+    print("Numero de clases %d " % n_classes)
+    dict_clases = create_dict(clases)
+
     #metemos en orden
     for k in y:
-        res.append(clases_dict[k])
+        res.append(dict_clases[k])
     return res
 
-def delete_class(X,y,class_to_delete='000'):
+def delete_class(X,y,class_to_delete=['000','0']):
     count = 0
     new_X = []; new_y = []
     for i in range(len(y)):
-        if y[i] != class_to_delete:
+        if y[i] not in class_to_delete:
             new_X.append(X[i])
             new_y.append(y[i])
         else: count += 1
@@ -140,40 +146,52 @@ def codificar(X,coding={}):
         new_X.append(new_frase)
     return new_X
 
-def get_data(perc_train=0.8, tfidf = False, stem = True, simply=False):
-    X, y,tamanyo,coding = read_data(stem=True)
+def get_data(perc_train=0.8, codif = 'tfidf', stem = True, simply=False):
+    X, y = read_data(stem=stem,simply=simply)
     X, y = delete_class(X, y)
-    if simply:
-        y = simplify_classes(y)
-        print("Reducido numero de clases!!!!")
-    clases = list(set(y))
-    n_classes = len(clases)
-    print("Clases %s " % clases)
-    print("Numero de clases %d " % n_classes)
-    dict_clases = create_dict(clases)
 
     X, y = shuffle(X, y)
 
-    y = transform_class_to_integer(y, dict_clases)
+    y = transform_class_to_integer(y)
 
-
-    if (tfidf):
+    print("Codif : %s " % codif)
+    if (codif == 'tfidf'):
         X = tf_idf(X)
-        num_train = int(X.shape[0] * perc_train)
-    else:
-        X = codificar(X,coding)
-        num_train = int(len(X)*perc_train)
+        X_train, y_train, X_test, y_test = train_test_split(perc_train)
 
+        # tamanyo = n_features
+        return X_train, y_train, X_test, y_test
+    elif (codif == 'freq'):
+
+
+        items = vocab_freq.items()
+        ordered = sorted(items, key=itemgetter(1), reverse=True)
+
+        tamanyo = create_coding(ordered)
+
+        X = codificar(X, coding)
+        print("X: ")
+        print(X)
+        print("*"*100)
+        X_train, y_train, X_test, y_test = train_test_split(perc_train)
+        print("Tamanyo del dic %d " % tamanyo)
+        return X_train, y_train, X_test, y_test, tamanyo, coding
+    elif (codif == 'bagofwords'):
+        return X,y
+
+
+def train_test_split(X,y,perc_train):
+    X, y = shuffle(X, y)
+    num_train = int(len(X) * perc_train)
     print("Num ejemplos para entrenar %d " % num_train)
     X_train = X[:num_train]
     y_train = y[:num_train]
     X_test = X[num_train:]
     y_test = y[num_train:]
-
     return X_train, y_train, X_test, y_test
 
 """Devuelve X (muestras) e y(etiquetas), tamanyo_dic, codificacion"""
-def read_data(path="data/", stem=True):
+def read_data(path="data/", stem=True,simply = False):
     stop_catalan = cargar_stopwords_catalan()
 
     lst = os.listdir(path)
@@ -190,11 +208,14 @@ def read_data(path="data/", stem=True):
                 if row[1] == '': continue
                 X.append(procesar(row[1], stem,extra_stop=stop_catalan))
                 y.append(row[2])
-    print(vocab_freq)
-    items = vocab_freq.items()
-    ordered = sorted(items,key=itemgetter(1),reverse=True)
-    tamanyo = create_coding(ordered)
-    print("Tamanyo del dic %d " % tamanyo)
-    return X,y,tamanyo,coding
+    print("frecuencia vocab  %s " % vocab_freq)
+    print("tam vocab %d " % len(vocab_freq.keys()))
+    if simply:
+        y = simplify_classes(y)
+        print("Reducido numero de clases!!!!")
+
+    return X,y
+
+
 
 #get_data(simply=True)
