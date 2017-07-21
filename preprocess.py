@@ -1,13 +1,11 @@
 import os,csv
-from nltk.tokenize import RegexpTokenizer
 import nltk, re
 from sklearn.feature_extraction.text import TfidfTransformer
-from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.utils import shuffle
 from nltk.stem import SnowballStemmer
 from nltk.corpus import stopwords
 from operator import itemgetter
-import unicodedata
+import unicodedata, copy
 from sklearn.feature_extraction.text import CountVectorizer
 
 
@@ -49,6 +47,8 @@ class Data():
         self.y = []
         self.X = []
 
+        self.real_X = []
+
         self.start()
 
     def start(self):
@@ -56,6 +56,8 @@ class Data():
         self.delete_class()
 
         self.transform_class_to_integer()
+
+        self.real_X = copy.copy(self.X)
 
         print("Codif : %s " % self.codif)
         if (self.codif == 'tfidf'):
@@ -77,6 +79,9 @@ class Data():
             self.bag_of_word()
 
         print("Finished. \n Classes: %s" % self.y)
+
+    def get_non_coded(self):
+        return self.real_X, self.y
 
     def bag_of_word(self):
         vectorizer = CountVectorizer(analyzer="word", \

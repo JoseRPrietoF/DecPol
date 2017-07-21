@@ -13,8 +13,10 @@ from keras.preprocessing import sequence
 
 # TODO
 
-dataset = Data(path="data/", stem=True, simply=True, stop_word = True, delete_class=['0','000'],codif = 'bagofwords',max_features=None)
+dataset = Data(path="data/", stem=False, simply=True, stop_word = False, delete_class=['0','000'],codif = 'bagofwords',max_features=None)
 X_train, y_train, X_test, y_test = dataset.train_test_split(0.8)
+
+x,y = dataset.get_non_coded()
 
 # create the model
 embedding_vecor_length = 2
