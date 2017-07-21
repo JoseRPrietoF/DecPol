@@ -1,4 +1,4 @@
-import preprocess
+from preprocess import Data
 import keras
 from keras.models import Sequential, Model, load_model
 from keras.layers import Input, Reshape, Activation
@@ -11,27 +11,10 @@ from keras.layers import LSTM
 from keras.models import Sequential
 from keras.preprocessing import sequence
 
+# TODO
 
-tf_idf = False
-
-X_train, y_train, X_test, y_test,n_features, _  = preprocess.get_data(simply=True,tfidf=tf_idf)
-
-print("****" * 100)
-if tf_idf:
-    print("Shape")
-    print(X_train[0].shape)
-    print("****" *100)
-else:
-    for i in range(5):
-        print("*"*10)
-        #print(X_train[i])
-        #print(len(X_train[i]))
-
-print("Number of features %d " % n_features)
-# truncate and pad input sequences
-max_review_length = 15
-X_train = sequence.pad_sequences(X_train, maxlen=max_review_length)
-X_test = sequence.pad_sequences(X_test, maxlen=max_review_length)
+dataset = Data(path="data/", stem=True, simply=True, stop_word = True, delete_class=['0','000'],codif = 'bagofwords',max_features=None)
+X_train, y_train, X_test, y_test = dataset.train_test_split(0.8)
 
 # create the model
 embedding_vecor_length = 2

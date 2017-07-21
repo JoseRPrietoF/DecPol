@@ -1,30 +1,29 @@
 from sklearn.naive_bayes import MultinomialNB
 import preprocess
-from keras.preprocessing import sequence
-from bagOfWords import bagOfWords,bagOfWords_cargado,bagOfWords_Cargar
+from preprocess import Data
 
-obj = bagOfWords_Cargar(simply=True)
 
 best_acc = 0
 best_n = 0
-print("Clases: %s " % obj.get('y'))
-for i in range(100,5300,100):
+dataset = Data(path="data/", stem=True, simply=True, stop_word = True, delete_class=['0','000'],codif = 'bagofwords',max_features=None)
+X_train, y_train, X_test, y_test = dataset.train_test_split(0.8)
+for i in [1e-1,1e-2,1e-3,1e-4,1e-5,1e-6]:
 
-    X,y,vocab = bagOfWords_cargado(obj, max_features=i)
-    X_train, y_train, X_test, y_test = preprocess.train_test_split(X,y,0.8)
-
-    best_acc = 0
-    best_n = 0
-
-    clf = MultinomialNB().fit(X_train, y_train)
+    clf = MultinomialNB(alpha=i).fit(X_train, y_train)
     acc = clf.score(X_test,y_test)
     #print("****" * 100)
     #print("with %d features " % i)
     #print("Accuracy %f " % acc)
     #print("Vocab %s " % vocab)
-    if best_acc < acc:
+    print("Acc: %f" % acc)
+    if acc > best_acc:
+        print("Acc %f > %f" % (acc,best_acc))
         best_acc = acc
         best_n = i
 
 print("*" * 100)
-print("Mejor 'max_features' %d con accuracy %f " % (best_n, best_acc))
+print("Mejor 'alpha' %f con accuracy %f " % (best_n, best_acc))
+
+"""
+Mejor 'alpha' 0.100000 con accuracy 0.757282 
+"""

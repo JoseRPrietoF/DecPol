@@ -1,25 +1,13 @@
 from sklearn.neighbors import KNeighborsClassifier
-import preprocess
+from preprocess import Data
 
-tf_idf = False
-X_train, y_train, X_test, y_test,n_features, _ = preprocess.get_data(simply=True, tfidf=tf_idf)
-for i in range(2):
-    print("***"*10)
-    print(X_train[i])
+dataset = Data(path="data/", stem=True, simply=True, stop_word = True, delete_class=['0','000'],codif = 'bagofwords',max_features=None)
+X_train, y_train, X_test, y_test = dataset.train_test_split(0.8)
 
 best_acc = 0
 best_n = 0
-print("****" * 100)
-if tf_idf:
-    print("Shape")
-    print(X_train[0].shape)
-    print("****" *100)
-else:
-    for i in range(5):
-        print("*"*10)
-        #print(X_train[i])
-        #print(len(X_train[i]))
-for i in range(4,100):
+
+for i in range(1,40,1):
 
     classifier = KNeighborsClassifier( n_neighbors=i, weights='uniform' )
     print("Fitting KNN Classifier")
@@ -40,3 +28,8 @@ for i in range(4,100):
 
 print("*"*100)
 print("Mejor KNN con %d vecinos con accuracy %f " % (best_n,best_acc))
+
+"""
+****************************************************************************************************
+Mejor KNN con 3 vecinos con accuracy 41.747573 
+"""

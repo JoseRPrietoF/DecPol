@@ -2,26 +2,17 @@ from sklearn.svm import SVC
 from sklearn.svm import SVR
 from sklearn.model_selection import GridSearchCV
 from nltk.stem import SnowballStemmer
-import preprocess
-from bagOfWords import bagOfWords,bagOfWords_cargado,bagOfWords_Cargar
+from preprocess import Data
 
 
 stem = False
 simply = True
-obj = bagOfWords_Cargar(simply=simply,stem=stem)
 
 best_acc = 0
 best_n = 0
-
-print("Clases: %s " % obj.get('y'))
-for i in [8002]:
-
-    X,y,vocab = bagOfWords_cargado(obj, max_features=i)
-
-    X_train, y_train, X_test, y_test = preprocess.train_test_split(X,y,0.8)
-
-    best_acc = 0
-    best_n = 0
+dataset = Data(path="data/", stem=True, simply=True, stop_word = True, delete_class=['0','000'],codif = 'bagofwords',max_features=None)
+X_train, y_train, X_test, y_test = dataset.train_test_split(0.8)
+for i in [0]:
 
     params = {'kernel': ['rbf', 'linear'],
               #'C': [1.0, 10.0, 100.0, 1.0e-3, 1.0e-2, 1.0e-1, 1.0, 1.0e+1],
